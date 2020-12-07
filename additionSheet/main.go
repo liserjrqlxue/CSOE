@@ -4,9 +4,9 @@ import (
 	"flag"
 	"path/filepath"
 
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/liserjrqlxue/goUtil/simpleUtil"
 	"github.com/liserjrqlxue/goUtil/textUtil"
-	"github.com/tealeg/xlsx/v2"
 )
 
 // flag
@@ -41,20 +41,25 @@ var (
 func main() {
 	flag.Parse()
 	var maSlice = textUtil.File2Slice(*ma, "\t")
-	var finalXlsx = simpleUtil.HandleError(xlsx.OpenFile(*final)).(*xlsx.File)
-	var cnvXlsx = simpleUtil.HandleError(xlsx.OpenFile(*cnv)).(*xlsx.File)
-	var gbaXlsx = simpleUtil.HandleError(xlsx.OpenFile(*gba)).(*xlsx.File)
-	var comXlsx = simpleUtil.HandleError(xlsx.OpenFile(*com)).(*xlsx.File)
-	simpleUtil.HandleError(finalXlsx.AppendSheet(*cnvXlsx.Sheet["CNV"], "GBA_CHA-CNV"))
-	simpleUtil.HandleError(finalXlsx.AppendSheet(*gbaXlsx.Sheet["GBA-variants"], "GBA-variants"))
-	simpleUtil.HandleError(finalXlsx.AppendSheet(*comXlsx.Sheet["report"], "CAH-report"))
-	var maSheet = simpleUtil.HandleError(finalXlsx.AddSheet("MA")).(*xlsx.Sheet)
-	for _, maArray := range maSlice {
-		var row = maSheet.AddRow()
-		for _, v := range maArray {
-			row.AddCell().SetValue(v)
-		}
+	var finalXlsx = simpleUtil.HandleError(excelize.OpenFile(*final)).(*excelize.File)
+	var cnvXlsx = simpleUtil.HandleError(excelize.OpenFile(*cnv)).(*excelize.File)
+	var gbaXlsx = simpleUtil.HandleError(excelize.OpenFile(*gba)).(*excelize.File)
+	var comXlsx = simpleUtil.HandleError(excelize.OpenFile(*com)).(*excelize.File)
+	AppendSheet(cnvXlsx, finalXlsx, "CNV", "GBA_CHA-CNV")
+	AppendSheet(gbaXlsx, finalXlsx, "GBA-variants", "GBA-variants")
+	AppendSheet(comXlsx, finalXlsx, "report", "CAH-report")
+	AppendSlice2Excel(finalXlsx, "MA-result", maSlice)
 
+	simpleUtil.CheckErr(finalXlsx.SaveAs(*final + ".OE.xlsx"))
+}
+
+func AppendSheet(old, new *excelize.File, oldName, newName string) {
+	AppendSlice2Excel(new, newName, simpleUtil.HandleError(old.GetRows(oldName)).([][]string))
+}
+func AppendSlice2Excel(file *excelize.File, sheetName string, slice [][]string) {
+	file.NewSheet(sheetName)
+	for i, row := range slice {
+		var axis = simpleUtil.HandleError(excelize.CoordinatesToCellName(1, i+1)).(string)
+		simpleUtil.CheckErr(file.SetSheetRow(sheetName, axis, &row))
 	}
-	simpleUtil.CheckErr(finalXlsx.Save(*final + "OS.xlsx"))
 }
