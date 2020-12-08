@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
@@ -11,6 +13,11 @@ import (
 
 // flag
 var (
+	workDir = flag.String(
+		"worKDir",
+		"",
+		"work dir",
+	)
 	final = flag.String(
 		"final",
 		"",
@@ -18,28 +25,51 @@ var (
 	)
 	ma = flag.String(
 		"ma",
-		filepath.Join("Y159_MA_update", "MA_update.xls"),
-		"MA result",
+		"",
+		"MA result, default is -workDir/Y159_MA_update/MA_update.xls",
 	)
 	cnv = flag.String(
 		"cnv",
-		filepath.Join("CAH_GBA/CNV/CNV_report.reform.xlsx"),
-		"CAH_GBA CNV result",
+		"",
+		"CAH_GBA CNV result, default is -workDir/CAH_GBA/CNV/CNV_report.reform.xlsx",
 	)
 	gba = flag.String(
 		"gba",
 		"",
-		"gba.PE_SE.xlsx",
+		"gba.PE_SE.xlsx, default is -workDir/CAH_GBA/$(basename -workDir)_CAH_GBA.gba.PE_SE.xlsx",
 	)
 	com = flag.String(
 		"com",
 		"",
-		"com_snp.xlsx",
+		"com_snp.xlsx, default is -workDir/CAH_GBA/$(basename -workDir)_CAH_GBA.com_snp.xlsx",
 	)
 )
 
 func main() {
 	flag.Parse()
+	if *workDir != "" {
+		*workDir = simpleUtil.HandleError(filepath.Abs(*workDir)).(string)
+		var baseDir = filepath.Base(*workDir)
+		if *ma == "" {
+			*ma = filepath.Join(*workDir, "Y159_MA_update", "MA_update.xls")
+		}
+		if *cnv == "" {
+			*cnv = filepath.Join(*workDir, "CAH_GBA", "CNV", "CNV_report.reform.xlsx")
+		}
+		if *gba == "" {
+			*gba = filepath.Join(*workDir, "CAH_GBA", baseDir+"_CAH_GBA.gba.PE_SE.xlsx")
+		}
+		if *com == "" {
+			*com = filepath.Join(*workDir, "CAH_GBA", baseDir+"_CAH_GBA.com_snp.xlsx")
+		}
+	}
+	if *ma == "" || *cnv == "" || *gba == "" || *com == "" {
+		fmt.Println("-workDir or -ma/-cnv/-gba/-com are required!")
+		os.Exit(1)
+	}
+	if *final == "" {
+		fmt.Println("-final is required!")
+	}
 	var maSlice = textUtil.File2Slice(*ma, "\t")
 	var finalXlsx = simpleUtil.HandleError(excelize.OpenFile(*final)).(*excelize.File)
 	var cnvXlsx = simpleUtil.HandleError(excelize.OpenFile(*cnv)).(*excelize.File)
