@@ -94,7 +94,7 @@ func main() {
 		finalXlsx.SetCellValue(
 			avdSheetName,
 			simpleUtil.HandleError(
-				excelize.CoordinatesToCellName(len(title), 0),
+				excelize.CoordinatesToCellName(len(title), 1),
 			).(string),
 			extraTitle,
 		),
@@ -113,6 +113,7 @@ func main() {
 			item["A.Depth"] = item["Ad"]
 			item["A.Ratio"] = item["Ar"]
 			avdExtra = append(avdExtra, item)
+			rIdx++
 			for j := range title {
 				var value, ok = item[title[j]]
 				if ok {
@@ -121,7 +122,6 @@ func main() {
 					} else {
 						item[extraTitle] = "验证"
 					}
-					rIdx++
 					simpleUtil.CheckErr(
 						finalXlsx.SetCellValue(
 							avdSheetName,
