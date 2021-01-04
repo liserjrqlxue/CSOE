@@ -14,7 +14,7 @@ import (
 // flag
 var (
 	workDir = flag.String(
-		"worKDir",
+		"workDir",
 		"",
 		"work dir",
 	)
@@ -36,12 +36,12 @@ var (
 	gba = flag.String(
 		"gba",
 		"",
-		"gba.PE_SE.xlsx, default is -workDir/CAH_GBA/$(basename -workDir)_CAH_GBA.gba.PE_SE.xlsx",
+		"gba.PE_SE.xlsx, default is -workDir/CAH_GBA/$(basename -workDir).gba.PE_SE.xlsx",
 	)
 	com = flag.String(
 		"com",
 		"",
-		"com_snp.xlsx, default is -workDir/CAH_GBA/$(basename -workDir)_CAH_GBA.com_snp.xlsx",
+		"com_snp.xlsx, default is -workDir/CAH_GBA/$(basename -workDir).com_snp.xlsx",
 	)
 )
 
@@ -57,18 +57,21 @@ func main() {
 			*cnv = filepath.Join(*workDir, "CAH_GBA", "CNV", "CNV_report.reform.xlsx")
 		}
 		if *gba == "" {
-			*gba = filepath.Join(*workDir, "CAH_GBA", baseDir+"_CAH_GBA.gba.PE_SE.xlsx")
+			*gba = filepath.Join(*workDir, "CAH_GBA", baseDir+".gba.PE_SE.xlsx")
 		}
 		if *com == "" {
-			*com = filepath.Join(*workDir, "CAH_GBA", baseDir+"_CAH_GBA.com_snp.xlsx")
+			*com = filepath.Join(*workDir, "CAH_GBA", baseDir+".com_snp.xlsx")
 		}
 	}
 	if *ma == "" || *cnv == "" || *gba == "" || *com == "" {
+		flag.Usage()
 		fmt.Println("-workDir or -ma/-cnv/-gba/-com are required!")
 		os.Exit(1)
 	}
 	if *final == "" {
+		flag.Usage()
 		fmt.Println("-final is required!")
+		os.Exit(1)
 	}
 	var maSlice = textUtil.File2Slice(*ma, "\t")
 	var finalXlsx = simpleUtil.HandleError(excelize.OpenFile(*final)).(*excelize.File)
