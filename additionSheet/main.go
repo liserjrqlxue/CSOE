@@ -83,6 +83,30 @@ func main() {
 	AppendSheet(comXlsx, finalXlsx, "report", "CAH-report")
 	AppendSlice2Excel(finalXlsx, "MA-result", maSlice)
 
+	var ma, _ = textUtil.File2MapArray(*ma, "\t", nil)
+	var FusionResult = make(map[string]string)
+	var avdExtra []map[string]string
+	var avdSheetName = "All variants data"
+	var avdRaw = simpleUtil.HandleError(finalXlsx.GetRows(avdSheetName)).([][]string)
+	var title = avdRaw[0]
+	var rIdx = len(avdRaw) + 10
+	for _, item := range ma {
+		var sampleID = item["sample"]
+		FusionResult[sampleID] = item["Fusion_result"]
+		if item["cHGVS"] != "-" {
+			item["SampleID"] = sampleID
+			item["A.Depth"] = item["Ad"]
+			item["A.Ratio"] = item["Ar"]
+			avdExtra = append(avdExtra, item)
+			for j := range title {
+				var value, ok = item[title[j]]
+				if ok {
+					var axis = simpleUtil.HandleError(excelize.CoordinatesToCellName(j+1, rIdx)).(string)
+					simpleUtil.CheckErr(finalXlsx.SetCellValue(avdSheetName, axis, value))
+				}
+			}
+		}
+	}
 	simpleUtil.CheckErr(finalXlsx.SaveAs(*final + ".OE.xlsx"))
 }
 
