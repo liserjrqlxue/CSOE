@@ -88,8 +88,23 @@ func main() {
 	var avdExtra []map[string]string
 	var avdSheetName = "All variants data"
 	var avdRaw = simpleUtil.HandleError(finalXlsx.GetRows(avdSheetName)).([][]string)
-	var title = avdRaw[0]
-	var rIdx = len(avdRaw) + 10
+	var extraTitle = "是否需要验证"
+	var title = append(avdRaw[0], extraTitle)
+	simpleUtil.CheckErr(
+		finalXlsx.SetCellValue(
+			avdSheetName,
+			simpleUtil.HandleError(
+				excelize.CoordinatesToCellName(len(title), 0),
+			).(string),
+			extraTitle,
+		),
+	)
+	var HBA2NoCheck = map[string]bool{
+		"c.369C>G": true,
+		"c.377T>C": true,
+		"c.427T>C": true,
+	}
+	var rIdx = len(avdRaw)
 	for _, item := range ma {
 		var sampleID = item["sample"]
 		FusionResult[sampleID] = item["Fusion_result"]
@@ -101,8 +116,21 @@ func main() {
 			for j := range title {
 				var value, ok = item[title[j]]
 				if ok {
-					var axis = simpleUtil.HandleError(excelize.CoordinatesToCellName(j+1, rIdx)).(string)
-					simpleUtil.CheckErr(finalXlsx.SetCellValue(avdSheetName, axis, value))
+					if item["Gene Symbol"] == "HBA2" && HBA2NoCheck[item["cHGVS"]] {
+						item[extraTitle] = ""
+					} else {
+						item[extraTitle] = "验证"
+					}
+					rIdx++
+					simpleUtil.CheckErr(
+						finalXlsx.SetCellValue(
+							avdSheetName,
+							simpleUtil.HandleError(
+								excelize.CoordinatesToCellName(j+1, rIdx),
+							).(string),
+							value,
+						),
+					)
 				}
 			}
 		}
