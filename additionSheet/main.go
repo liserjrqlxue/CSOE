@@ -80,8 +80,22 @@ func main() {
 	AppendSheet(cnvXlsx, finalXlsx, "CNV", "GBA_CHA-CNV")
 	AppendSheet(gbaXlsx, finalXlsx, "GBA-variants", "GBA-variants")
 	AppendSheet(comXlsx, finalXlsx, "report", "CAH-report")
+	updateMa(finalXlsx, *ma)
+	simpleUtil.CheckErr(finalXlsx.SaveAs(*final + ".OE.xlsx"))
+}
 
-	var ma, _ = textUtil.File2MapArray(*ma, "\t", nil)
+func AppendSheet(old, new *excelize.File, oldName, newName string) {
+	AppendSlice2Excel(new, newName, simpleUtil.HandleError(old.GetRows(oldName)).([][]string))
+}
+func AppendSlice2Excel(file *excelize.File, sheetName string, slice [][]string) {
+	file.NewSheet(sheetName)
+	for i, row := range slice {
+		var axis = simpleUtil.HandleError(excelize.CoordinatesToCellName(1, i+1)).(string)
+		simpleUtil.CheckErr(file.SetSheetRow(sheetName, axis, &row))
+	}
+}
+func updateMa(file *excelize.File, maPath string) {
+	var ma, _ = textUtil.File2MapArray(maPath, "\t", nil)
 	var FusionResult = make(map[string]string)
 	var FusionResultMap = map[string]string{
 		"normal":  "N",
@@ -91,11 +105,11 @@ func main() {
 	// AVD
 	var avdExtra []map[string]string
 	var avdSheetName = "All variants data"
-	var avdRaw = simpleUtil.HandleError(finalXlsx.GetRows(avdSheetName)).([][]string)
+	var avdRaw = simpleUtil.HandleError(file.GetRows(avdSheetName)).([][]string)
 	var avdExtraTitle = "是否需要验证"
 	var avdTitle = append(avdRaw[0], avdExtraTitle)
 	simpleUtil.CheckErr(
-		finalXlsx.SetCellValue(
+		file.SetCellValue(
 			avdSheetName,
 			simpleUtil.HandleError(
 				excelize.CoordinatesToCellName(len(avdTitle), 1),
@@ -127,7 +141,7 @@ func main() {
 						item[avdExtraTitle] = "验证"
 					}
 					simpleUtil.CheckErr(
-						finalXlsx.SetCellValue(
+						file.SetCellValue(
 							avdSheetName,
 							simpleUtil.HandleError(
 								excelize.CoordinatesToCellName(j+1, rIdx),
@@ -142,14 +156,14 @@ func main() {
 	// AE
 	var aeSheetName = "补充实验"
 	var aeExtraTitle = "Fusion gene（α2和Ψα1）"
-	simpleUtil.CheckErr(finalXlsx.InsertCol(aeSheetName, "N"))
-	simpleUtil.CheckErr(finalXlsx.SetCellValue(aeSheetName, "N1", aeExtraTitle))
-	var aeRaw = simpleUtil.HandleError(finalXlsx.GetRows(aeSheetName)).([][]string)
+	simpleUtil.CheckErr(file.InsertCol(aeSheetName, "N"))
+	simpleUtil.CheckErr(file.SetCellValue(aeSheetName, "N1", aeExtraTitle))
+	var aeRaw = simpleUtil.HandleError(file.GetRows(aeSheetName)).([][]string)
 	for i, item := range aeRaw {
 		if i > 0 {
 			var sampleID = item[3]
 			simpleUtil.CheckErr(
-				finalXlsx.SetCellValue(
+				file.SetCellValue(
 					aeSheetName,
 					simpleUtil.HandleError(
 						excelize.CoordinatesToCellName(14, i+1),
@@ -158,18 +172,5 @@ func main() {
 				),
 			)
 		}
-	}
-
-	simpleUtil.CheckErr(finalXlsx.SaveAs(*final + ".OE.xlsx"))
-}
-
-func AppendSheet(old, new *excelize.File, oldName, newName string) {
-	AppendSlice2Excel(new, newName, simpleUtil.HandleError(old.GetRows(oldName)).([][]string))
-}
-func AppendSlice2Excel(file *excelize.File, sheetName string, slice [][]string) {
-	file.NewSheet(sheetName)
-	for i, row := range slice {
-		var axis = simpleUtil.HandleError(excelize.CoordinatesToCellName(1, i+1)).(string)
-		simpleUtil.CheckErr(file.SetSheetRow(sheetName, axis, &row))
 	}
 }
