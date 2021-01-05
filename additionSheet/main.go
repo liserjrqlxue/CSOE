@@ -73,7 +73,6 @@ func main() {
 		fmt.Println("-final is required!")
 		os.Exit(1)
 	}
-	var maSlice = textUtil.File2Slice(*ma, "\t")
 	var finalXlsx = simpleUtil.HandleError(excelize.OpenFile(*final)).(*excelize.File)
 	var cnvXlsx = simpleUtil.HandleError(excelize.OpenFile(*cnv)).(*excelize.File)
 	var gbaXlsx = simpleUtil.HandleError(excelize.OpenFile(*gba)).(*excelize.File)
@@ -81,22 +80,27 @@ func main() {
 	AppendSheet(cnvXlsx, finalXlsx, "CNV", "GBA_CHA-CNV")
 	AppendSheet(gbaXlsx, finalXlsx, "GBA-variants", "GBA-variants")
 	AppendSheet(comXlsx, finalXlsx, "report", "CAH-report")
-	AppendSlice2Excel(finalXlsx, "MA-result", maSlice)
 
 	var ma, _ = textUtil.File2MapArray(*ma, "\t", nil)
 	var FusionResult = make(map[string]string)
+	var FusionResultMap = map[string]string{
+		"normal":  "N",
+		"Fusion":  "阳性",
+		"Dubious": "灰区",
+	}
+	// AVD
 	var avdExtra []map[string]string
 	var avdSheetName = "All variants data"
 	var avdRaw = simpleUtil.HandleError(finalXlsx.GetRows(avdSheetName)).([][]string)
-	var extraTitle = "是否需要验证"
-	var title = append(avdRaw[0], extraTitle)
+	var avdExtraTitle = "是否需要验证"
+	var avdTitle = append(avdRaw[0], avdExtraTitle)
 	simpleUtil.CheckErr(
 		finalXlsx.SetCellValue(
 			avdSheetName,
 			simpleUtil.HandleError(
-				excelize.CoordinatesToCellName(len(title), 1),
+				excelize.CoordinatesToCellName(len(avdTitle), 1),
 			).(string),
-			extraTitle,
+			avdExtraTitle,
 		),
 	)
 	var HBA2NoCheck = map[string]bool{
@@ -107,20 +111,20 @@ func main() {
 	var rIdx = len(avdRaw)
 	for _, item := range ma {
 		var sampleID = item["sample"]
-		FusionResult[sampleID] = item["Fusion_result"]
+		FusionResult[sampleID] = FusionResultMap[item["Fusion_result"]]
 		if item["cHGVS"] != "-" {
 			item["SampleID"] = sampleID
 			item["A.Depth"] = item["Ad"]
 			item["A.Ratio"] = item["Ar"]
 			avdExtra = append(avdExtra, item)
 			rIdx++
-			for j := range title {
-				var value, ok = item[title[j]]
+			for j := range avdTitle {
+				var value, ok = item[avdTitle[j]]
 				if ok {
 					if item["Gene Symbol"] == "HBA2" && HBA2NoCheck[item["cHGVS"]] {
-						item[extraTitle] = ""
+						item[avdExtraTitle] = ""
 					} else {
-						item[extraTitle] = "验证"
+						item[avdExtraTitle] = "验证"
 					}
 					simpleUtil.CheckErr(
 						finalXlsx.SetCellValue(
@@ -135,6 +139,27 @@ func main() {
 			}
 		}
 	}
+	// AE
+	var aeSheetName = "补充实验"
+	var aeExtraTitle = "Fusion gene（α2和Ψα1）"
+	simpleUtil.CheckErr(finalXlsx.InsertCol(aeSheetName, "N"))
+	simpleUtil.CheckErr(finalXlsx.SetCellValue(aeSheetName, "N1", aeExtraTitle))
+	var aeRaw = simpleUtil.HandleError(finalXlsx.GetRows(aeSheetName)).([][]string)
+	for i, item := range aeRaw {
+		if i > 0 {
+			var sampleID = item[3]
+			simpleUtil.CheckErr(
+				finalXlsx.SetCellValue(
+					aeSheetName,
+					simpleUtil.HandleError(
+						excelize.CoordinatesToCellName(14, i+1),
+					).(string),
+					FusionResult[sampleID],
+				),
+			)
+		}
+	}
+
 	simpleUtil.CheckErr(finalXlsx.SaveAs(*final + ".OE.xlsx"))
 }
 
