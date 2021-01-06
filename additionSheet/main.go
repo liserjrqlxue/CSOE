@@ -9,6 +9,7 @@ import (
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/liserjrqlxue/goUtil/simpleUtil"
 	"github.com/liserjrqlxue/goUtil/textUtil"
+	"github.com/liserjrqlxue/version"
 )
 
 // flag
@@ -46,6 +47,7 @@ var (
 )
 
 func main() {
+	version.LogVersion()
 	flag.Parse()
 	if *workDir != "" {
 		*workDir = simpleUtil.HandleError(filepath.Abs(*workDir)).(string)
