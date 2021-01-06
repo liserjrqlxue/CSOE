@@ -74,16 +74,22 @@ func main() {
 		os.Exit(1)
 	}
 	var finalXlsx = simpleUtil.HandleError(excelize.OpenFile(*final)).(*excelize.File)
-	var cnvXlsx = simpleUtil.HandleError(excelize.OpenFile(*cnv)).(*excelize.File)
-	var gbaXlsx = simpleUtil.HandleError(excelize.OpenFile(*gba)).(*excelize.File)
-	var comXlsx = simpleUtil.HandleError(excelize.OpenFile(*com)).(*excelize.File)
-	AppendSheet(cnvXlsx, finalXlsx, "CNV", "GBA_CHA-CNV")
-	AppendSheet(gbaXlsx, finalXlsx, "GBA-variants", "GBA-variants")
-	AppendSheet(comXlsx, finalXlsx, "report", "CAH-report")
-	updateMa(finalXlsx, *ma)
+	CopySheet(finalXlsx, "GBA_CHA-CNV", *cnv, "CNV")
+	CopySheet(finalXlsx, "GBA-variants", *gba, "GBA-variants")
+	CopySheet(finalXlsx, "CAH-report", *com, "report")
+	UpdateMa(finalXlsx, *ma)
 	simpleUtil.CheckErr(finalXlsx.SaveAs(*final + ".OE.xlsx"))
 }
 
+func CopySheet(newExcel *excelize.File, newName, oldFile, oldName string) {
+	AppendSheet(
+		simpleUtil.HandleError(
+			excelize.OpenFile(oldFile)).(*excelize.File),
+		newExcel,
+		oldName,
+		newName,
+	)
+}
 func AppendSheet(old, new *excelize.File, oldName, newName string) {
 	AppendSlice2Excel(new, newName, simpleUtil.HandleError(old.GetRows(oldName)).([][]string))
 }
@@ -94,7 +100,7 @@ func AppendSlice2Excel(file *excelize.File, sheetName string, slice [][]string) 
 		simpleUtil.CheckErr(file.SetSheetRow(sheetName, axis, &row))
 	}
 }
-func updateMa(file *excelize.File, maPath string) {
+func UpdateMa(file *excelize.File, maPath string) {
 	var ma, _ = textUtil.File2MapArray(maPath, "\t", nil)
 	var FusionResult = make(map[string]string)
 	var FusionResultMap = map[string]string{
