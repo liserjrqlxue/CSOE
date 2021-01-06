@@ -83,6 +83,7 @@ func main() {
 	simpleUtil.CheckErr(finalXlsx.SaveAs(*final + ".OE.xlsx"))
 }
 
+// CopySheet copy sheet from other excel file
 func CopySheet(newExcel *excelize.File, newName, oldFile, oldName string) {
 	AppendSheet(
 		simpleUtil.HandleError(
@@ -92,9 +93,13 @@ func CopySheet(newExcel *excelize.File, newName, oldFile, oldName string) {
 		newName,
 	)
 }
+
+// AppendSheet append sheet from other excel
 func AppendSheet(old, new *excelize.File, oldName, newName string) {
 	AppendSlice2Excel(new, newName, simpleUtil.HandleError(old.GetRows(oldName)).([][]string))
 }
+
+// AppendSlice2Excel append slice to new sheet
 func AppendSlice2Excel(file *excelize.File, sheetName string, slice [][]string) {
 	file.NewSheet(sheetName)
 	for i, row := range slice {
@@ -102,6 +107,8 @@ func AppendSlice2Excel(file *excelize.File, sheetName string, slice [][]string) 
 		simpleUtil.CheckErr(file.SetSheetRow(sheetName, axis, &row))
 	}
 }
+
+// UpdateMa update AVD and AE from MA
 func UpdateMa(file *excelize.File, maPath string) {
 	var ma, _ = textUtil.File2MapArray(maPath, "\t", nil)
 	var FusionResult = make(map[string]string)
